@@ -6,18 +6,22 @@ const jwt = require('jsonwebtoken');
 exports.registerUser = async (req, res) => {
     const { username, email, password } = req.body;
 
+    // Validate input
     if (!username || !email || !password) {
         return res.status(400).json({ error: 'All fields are required.' });
     }
-
     if (password.length < 6) {
         return res.status(400).json({ error: 'Password must be at least 6 characters.' });
     }
 
     try {
+        // Hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create and save the user
         const newUser = new User({ username, email, password: hashedPassword });
         await newUser.save();
+
         res.status(201).json({ message: 'User registered successfully.' });
     } catch (error) {
         console.error(error);
@@ -28,7 +32,10 @@ exports.registerUser = async (req, res) => {
 // Login user
 exports.loginUser = async (req, res) => {
     const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ error: 'Email and password are required.' });
+
+    if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required.' });
+    }
 
     try {
         const user = await User.findOne({ email });
@@ -47,5 +54,16 @@ exports.loginUser = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Login failed.' });
+    }
+};
+
+// Get all users (for frontend or API testing)
+exports.getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find().select('-password'); // Exclude passwords
+        res.status(200).json(users);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to fetch users.' });
     }
 };
